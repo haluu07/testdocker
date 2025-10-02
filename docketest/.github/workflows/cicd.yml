@@ -5,10 +5,10 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: ${{ ap-southeast-1 }}
-  AWS_ACCOUNT_ID: ${{3946-8642-1788 }}
-  ECR_REPOSITORY: ${{my-docker-repo }}
-  ECR_REGISTRY: ${{ 394686421788.dkr.ecr.ap-southeast-1.amazonaws.com }}.amazonaws.com
+  AWS_REGION: "ap-southeast-1"
+  AWS_ACCOUNT_ID: "394686421788"
+  ECR_REPOSITORY: "my-docker-repo"
+  ECR_REGISTRY: "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -18,15 +18,15 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Configure AWS creds
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr-login
