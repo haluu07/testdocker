@@ -5,7 +5,7 @@ app = Flask(__name__)
 # Định nghĩa route mặc định
 @app.route('/')
 def home():
-    return "Hello, Docker World!"
+    return "Hello, Im'docker!"
 
 # Route API trả về dữ liệu JSON
 @app.route('/api')
@@ -18,3 +18,4 @@ def api():
 # Chạy ứng dụng trên cổng 5000
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
+
