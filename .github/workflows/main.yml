@@ -1,0 +1,74 @@
+name: CI/CD to ECR & EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: "ap-southeast-1"
+  AWS_ACCOUNT_ID: "394686421788"
+  ECR_REPOSITORY: "my-docker-repo"
+  ECR_REGISTRY: "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+  deploy-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Deploy on EC2 (pull latest & restart)
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          REPO: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${USER}@${HOST} <<'EOF'
+          set -e
+          # login ECR
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin $REGISTRY
+          # pull image mới
+          docker pull $REGISTRY/$REPO:latest
+          # stop & remove container cũ (nếu có)
+          docker rm -f pyapp || true
+          # chạy lại
+          docker run -d --name pyapp -p 5000:5000 $REGISTRY/$REPO:latest
+          docker image prune -f || true
+          EOF
