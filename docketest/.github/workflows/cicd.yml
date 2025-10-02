@@ -5,10 +5,10 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  AWS_REGION: ${{ ap-southeast-1 }}
+  AWS_ACCOUNT_ID: ${{3946-8642-1788 }}
+  ECR_REPOSITORY: ${{my-docker-repo }}
+  ECR_REGISTRY: ${{ 394686421788.dkr.ecr.ap-southeast-1.amazonaws.com }}.amazonaws.com
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
